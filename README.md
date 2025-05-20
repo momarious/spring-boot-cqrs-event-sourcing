@@ -24,16 +24,25 @@ L’architecture repose sur le **pattern CQRS (Command Query Responsibility Segr
 
 ### 📦 Event Versioning
 
-Utilisation de **Protobuf** pour la sérialisation binaire des événements, avec support du versioning grâce à la compatibilité ascendante.
+Utilisation de **Protobuf** pour la sérialisation binaire des événements, avec support du versioning grâce à la compatibilité ascendante.  
+Les événements du domaine sont modélisés en messages Protobuf pour garantir une **évolution stable du schéma** et une **transmission efficace** dans un système distribué.
 
+---
 
-#### 🆚 Protobuf 
-Format de sérialisation binaire pour les événements et les APIs. Offre :
-- **Performances** : Taille réduite vs JSON
-- **Schema evolution** : Compatibilité ascendante/descendante
-- **Codegen** : Génération automatique de classes en Java
+#### 📌 Événements Protobuf utilisés
+
+Les événements métiers suivants sont définis sous forme de messages Protobuf :
+
+- `PretDemandeEvent` : Lorsqu’un client soumet une demande de prêt
+- `PretApprouveEvent` : Lorsqu’un prêt est approuvé
+- `PretDecaisseEvent` : Lors du décaissement des fonds
+- `PretRejetteEvent` : Lorsque le prêt est rejeté
+- `PretRembourseEvent` : Lors du remboursement final du prêt
+
+---
 
 #### ✅ Exemple de message Protobuf
+
 ```proto
 syntax = "proto3";
 
