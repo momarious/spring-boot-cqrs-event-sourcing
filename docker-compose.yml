@@ -1,0 +1,389 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: 'postgres:16.2-alpine'
+    container_name: db
+    environment:
+      POSTGRES_USER: momarious
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5492:5432"
+    volumes:
+      - ./misc/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U momarious -d event_store_db'"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    command: >
+      postgres -c wal_level=logical
+               -c timezone=Europe/Moscow
+    restart: unless-stopped
+    networks:
+    - pret_network
+ 
+  flyway-event-store-db:
+    image: flyway/flyway:9.22.1-alpine
+    container_name: flyway-event-store-db
+    command: -url=jdbc:postgresql://db:5432/event_store_db -user=momarious -password=secret -locations=filesystem:/flyway/sql migrate
+    volumes:
+      - ./command-service/src/main/resources/db/migration:/flyway/sql
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: 
+      - pret_network  
+
+  flyway-read-db:
+    image: flyway/flyway:9.22.1-alpine
+    container_name: flyway-read-db
+    command: -url=jdbc:postgresql://db:5432/read_db -user=momarious -password=secret -locations=filesystem:/flyway/sql migrate
+    volumes:
+      - ./query-service/src/main/resources/db/migration:/flyway/sql
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: 
+      - pret_network  
+
+  zookeeper:
+    image: 'bitnami/zookeeper:3.8.0'
+    container_name: zookeeper
+    ports:
+      - '2181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    volumes:
+      - zookeeper_data:/zookeeper
+    networks: 
+      - pret_network  
+
+  kafka:
+    image: 'bitnami/kafka:3.0.1'
+    container_name: kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    healthcheck:
+      test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9092; exit $$?;'"
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      - zookeeper
+    networks: 
+      - pret_network
+
+  kafka-connect:
+    image: quay.io/debezium/connect:3.0.6.Final
+    container_name: kafka-connect
+    ports:
+      - "8083:8083"
+    restart: always
+    depends_on: [ kafka, schema-registry, db]
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: kafka-connect-cluster
+      CONFIG_STORAGE_TOPIC: kafka-connect.config
+      OFFSET_STORAGE_TOPIC: kafka-connect.offset
+      STATUS_STORAGE_TOPIC: kafka-connect.status
+      ENABLE_APICURIO_CONVERTERS: "true"
+      ENABLE_DEBEZIUM_SCRIPTING: "true"
+      CONNECT_EXACTLY_ONCE_SOURCE_SUPPORT: "enabled"
+      CONNECT_CONFIG_PROVIDERS: "file"
+      CONNECT_CONFIG_PROVIDERS_FILE_CLASS: "org.apache.kafka.common.config.provider.FileConfigProvider"
+      CONNECT_LOG4J_LOGGER_org.apache.kafka.clients: ERROR
+    volumes:
+      - ./kafka-connect/filtering/groovy:/kafka/connect/debezium-connector-postgres/filtering/groovy
+      - ./kafka-connect/postgres.properties:/secrets/postgres.properties:ro
+      - ./kafka-connect/logs/:/kafka/logs/
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8083/connectors",
+        ]
+    networks: 
+      - pret_network
+
+  connectors-loader:
+    image: bash:5.2
+    container_name: connectors-loader
+    depends_on: 
+      kafka-connect:
+        condition: service_healthy
+    # restart: always
+    volumes:
+      - ./kafka-connect/connectors/:/usr/connectors:ro
+      - ./kafka-connect/load-connectors.sh/:/usr/load-connectors.sh:ro
+    command: bash /usr/load-connectors.sh
+    networks: 
+      - pret_network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    restart: always
+    depends_on: [ kafka ]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      # this is needed to access the UI from a host machine
+      - "8101:8080"
+    networks: 
+      - pret_network
+
+
+  # SCHEMA REGISTRY
+  schema-registry:
+    image: apicurio/apicurio-registry:3.0.6
+    container_name: schema-registry
+    ports:
+      - "8080:8080"
+    restart: always
+    environment:
+      QUARKUS_HTTP_CORS_ORIGINS: http://localhost:8103
+    networks: 
+      - pret_network
+
+  schema-registry-ui:
+    image: apicurio/apicurio-registry-ui:3.0.6
+    container_name: schema-registry-ui
+    restart: always
+    ports:
+      - "8103:8080"
+    networks: 
+      - pret_network
+
+  # mongodb:
+  #   image: docker.io/bitnami/mongodb:4.4
+  #   restart: always
+  #   container_name: mongodb
+  #   environment:
+  #     MONGODB_ROOT_USER: momarious
+  #     MONGODB_ROOT_PASSWORD: secret
+  #     BITNAMI_DEBUG: "false"
+  #     ALLOW_EMPTY_PASSWORD: "no"
+  #     MONGODB_SYSTEM_LOG_VERBOSITY: "0"
+  #     MONGODB_DISABLE_SYSTEM_LOG: "no"
+  #     MONGODB_DISABLE_JAVASCRIPT: "no"
+  #     MONGODB_ENABLE_JOURNAL: "yes"
+  #     MONGODB_ENABLE_IPV6: "no"
+  #     MONGODB_ENABLE_DIRECTORY_PER_DB: "no"
+  #     MONGODB_DATABASE: "read_db"
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   ports:
+  #     - "27017:27017"
+  #   networks: 
+  #     - pret_network
+
+  # prometheus:
+  #   image: bitnami/prometheus:latest
+  #   container_name: prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   networks: 
+  #     - pret_network
+  #   healthcheck:
+  #     test: wget --no-verbose --tries=1 --spider localhost:9090 || exit 1
+  #     interval: 5s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 5s
+      
+  # kafka-exporter:
+  #   image: docker.io/bitnami/kafka-exporter:latest
+  #   ports:
+  #   - "9308:9308"
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - pret_network
+  #   command: --kafka.server=kafka:9092
+  #   healthcheck:
+  #     test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9308; exit $$?;'"
+  #     interval: 5s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 5s
+      
+  # grafana:
+  #   container_name: grafana_container
+  #   image: grafana/grafana
+  #   restart: unless-stopped
+  #   environment:  
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=secret
+  #   volumes:
+  #     - ./dashboards:/var/lib/grafana/dashboards
+  #     - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+  #   ports:
+  #     - '3005:3000'
+  #   depends_on:
+  #     - influxdb
+  #     - prometheus
+  #   networks: 
+  #     - pret_network
+
+  # jaeger:
+  #   image: jaegertracing/all-in-one:latest
+  #   container_name: jaeger
+  #   ports:
+  #     - "6831:6831/udp"
+  #     - "16686:16686"
+  #     - "4317:4317"
+  #   environment:
+  #     - COLLECTOR_OTLP_ENABLED=true
+  #   restart: unless-stopped
+  #   networks: 
+  #     - pret_network
+
+  # query-service:
+  #   build:
+  #     context: ./query-service
+  #     dockerfile: Dockerfile
+  #   container_name: query-service
+  #   ports:
+  #     - 8082:8082
+  #   environment:
+  #     - MONGO_DB_HOST=${MONGO_DB_HOST}
+  #     - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+  #     - JAEGER_AGENT_HOST=${JAEGER_AGENT_HOST}
+  #     - JAEGER_AGENT_PORT=4317
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD",
+  #         "curl",
+  #         "-f",
+  #         "http://localhost:8182/actuator/health",
+  #       ]
+  #   restart: always
+  #   networks:
+  #     - pret_network
+  
+ 
+  # pgadmin:
+  #   image: dpage/pgadmin4:9.1.0
+  #   container_name: pgadmin
+  #   restart: always
+  #   # DO NOT USE SUCH A SETUP FOR PROD!
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+  #     PGADMIN_DEFAULT_PASSWORD: some_password
+  #     PGADMIN_CONFIG_SERVER_MODE: "False"
+  #     PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+  #   ports:
+  #     # this is needed to access pgAdmin UI from a host machine
+  #     - "8102:80"
+  #   volumes:
+  #     - ./misc/pgadmin/servers.json:/pgadmin4/servers.json:ro
+  #     - ./misc/pgadmin/pgpass:/tmp/pgpass:ro
+  #     - ./misc/pgadmin/preferences.json:/pgadmin4/preferences.json:ro
+  #     - pgadmin_data:/var/lib/pgadmin
+  #   entrypoint: >
+  #     /bin/sh -c "
+  #     cp -f /tmp/pgpass /var/lib/pgadmin/;
+  #     chmod 600 /var/lib/pgadmin/pgpass;
+  #     /entrypoint.sh
+  #     "
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+
+  # command-service:
+  #   container_name: command-service
+  #   build:
+  #     context: ./command-service
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - 8081:8081
+  #   environment:
+  #     - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+  #     - JAEGER_AGENT_HOST=${JAEGER_AGENT_HOST}
+  #     - JAEGER_AGENT_PORT=4317
+  #     - DB_HOST=${DB_HOST}
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD",
+  #         "curl",
+  #         "-f",
+  #         "http://localhost:8081/actuator/health",
+  #       ]
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   restart: always
+  #   links:
+  #     - db
+  #     - kafka
+  #     - zookeeper
+  #   networks:
+  #     - pret_network
+ 
+  # influxdb:
+  #   image: influxdb:1.8-alpine
+  #   ports:
+  #     - "8086:8086"
+  #   restart: unless-stopped
+  #   environment:
+  #     - INFLUXDB_DB=k6
+  #     - INFLUXDB_HTTP_MAX_BODY_SIZE=0
+  #   networks:
+  #     - pret_network
+
+  # k6:
+  #   image: grafana/k6:0.49.0
+  #   ports:
+  #     - "6565:6565"
+  #   command: run /lt/load-test.js
+  #   environment:
+  #     - K6_OUT=influxdb=http://influxdb:8086/k6
+  #     - K6_INFLUXDB_PUSH_INTERVAL=2s
+  #     - K6_INFLUXDB_CONCURRENT_WRITES=16
+  #   depends_on:
+  #     - grafana
+  #     - query-service
+  #   restart: no
+  #   volumes:
+  #     - ./load-test:/lt
+  #   networks:
+  #     - pret_network
+
+volumes:
+  pg_data:
+  # pgadmin_data:
+  zookeeper_data:
+  kafka_data:
+
+networks:
+  pret_network:
+    name: pret_network

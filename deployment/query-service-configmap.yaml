@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: query-service-configmap  # Replace with your ConfigMap name
+data:
+  mongo_db_host: mongodb  # Replace with your MongoDB host
+  kafka_bootstrap_servers: kafka:29092  # Replace with your Kafka bootstrap servers
+  jaeger_agent_host: jaeger  # Replace with your Jaeger agent host

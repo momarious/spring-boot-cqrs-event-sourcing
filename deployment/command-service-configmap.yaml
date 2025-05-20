@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: command-service-config
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"  # Replace with actual Kafka address
+  JAEGER_AGENT_HOST: "jaeger"
+  DB_PORT: "5432"
+  DB_HOST: "postgres"  # Replace with actual database host

@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package events;
+
+message PretDemandeEvent {
+    string aggregateId = 1;
+    string clientId = 2;
+    double montant = 3;
+    string dateDemande = 4;
+    int32 dureeEnMois = 5;
+    string description = 6;
+    StatutPret statut = 7;
+
+}
+
+message PretApprouveEvent {
+    string aggregateId = 1;
+    StatutPret statut = 2;
+}
+
+message PretDecaisseEvent{
+    string aggregateId= 1;
+    double montantDecaisse = 2;
+    StatutPret statut = 3;
+}
+
+message PretRejetteEvent{
+    string aggregateId= 1;
+    string raisonDuRejet = 2;
+    StatutPret statut = 3;
+}
+
+message PretRembourseEvent{
+    string aggregateId= 1;
+    double montantVerse = 2;
+    StatutPret statut = 3;
+}
+
+message PretPartiellementRembourseEvent{
+    string aggregateId= 1;
+    double montantVerse = 2;
+    StatutPret statut = 3;
+}
+
+enum StatutPret {
+    EN_ATTENTE= 0;
+    APPROUVE= 1;
+    REJETTE= 2;
+    DECAISSE= 3;
+    PARTIELLEMENT_REMBOURSE= 4;
+    REMBOURSE= 5;
+}
+    

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: command-service
+  labels:
+    app: command-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: command-service
+  template:
+    metadata:
+      labels:
+        app: command-service
+    spec:
+      containers:
+        - name: command-service
+          image: command-service:latest  # Replace with actual image
+          imagePullPolicy: IfNotPresent  
+          ports:
+            - containerPort: 8081
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: command-service-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+
+            - name: JAEGER_AGENT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: command-service-config
+                  key: JAEGER_AGENT_HOST
+
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: command-service-config
+                  key: DB_PORT
+
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: command-service-config
+                  key: DB_HOST
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: command-service
+spec:
+  type: LoadBalancer  # Change to NodePort or LoadBalancer if needed
+  selector:
+    app: command-service
+  ports:
+    - port: 80
+      targetPort: 8081

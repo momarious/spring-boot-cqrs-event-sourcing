@@ -1,0 +1,468 @@
+{
+	"info": {
+		"_postman_id": "d063b270-731d-4b64-8224-6bd26e017003",
+		"name": "_LOAN",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5489835"
+	},
+	"item": [
+		{
+			"name": "demanderPret",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// if (!pm.globals.has(\"iteration\")) {\r",
+							"//     pm.globals.set(\"iteration\", 1);\r",
+							"// }\r",
+							"\r",
+							"// let iteration = parseInt(pm.globals.get(\"iteration\"));\r",
+							"\r",
+							"// if (iteration <= 10) {\r",
+							"//     console.log(`Executing request #${iteration}`);\r",
+							"//     pm.globals.set(\"iteration\", iteration + 1);\r",
+							"    \r",
+							"//     // Set request to automatically re-run\r",
+							"//     pm.execution.setNextRequest(pm.info.requestName);\r",
+							"// } else {\r",
+							"//     pm.globals.unset(\"iteration\");\r",
+							"// }\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"clientId\" : \"{{$randomUUID}}\",\r\n    \"montant\" : 1000000,\r\n    \"dureeEnMois\" : 12,\r\n    \"description\" : \"{{$randomLoremSentence}}\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v1/prets",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1",
+						"prets"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Error",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// if (!pm.globals.has(\"iteration\")) {\r",
+							"//     pm.globals.set(\"iteration\", 1);\r",
+							"// }\r",
+							"\r",
+							"// let iteration = parseInt(pm.globals.get(\"iteration\"));\r",
+							"\r",
+							"// if (iteration <= 10) {\r",
+							"//     console.log(`Executing request #${iteration}`);\r",
+							"//     pm.globals.set(\"iteration\", iteration + 1);\r",
+							"    \r",
+							"//     // Set request to automatically re-run\r",
+							"//     pm.execution.setNextRequest(pm.info.requestName);\r",
+							"// } else {\r",
+							"//     pm.globals.unset(\"iteration\");\r",
+							"// }\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"clientId\" : \"{{$randomUUID}}\",\r\n    \"montant\" : 1000000,\r\n    \"dureeEnMois\" : 12,\r\n    \"description\" : \"{{$randomLoremSentence}}\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v1/error",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1",
+						"error"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "rejetterPret",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v1/prets/{{AGGREGATE}}/rejet",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1",
+						"prets",
+						"{{AGGREGATE}}",
+						"rejet"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "approuverPret",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/api/v1/prets/{{AGGREGATE}}/approbation",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1",
+						"prets",
+						"{{AGGREGATE}}",
+						"approbation"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "decaisserPret",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"montantDecaisse\" : 750000\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v1/prets/{{AGGREGATE}}/decaissement",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1",
+						"prets",
+						"{{AGGREGATE}}",
+						"decaissement"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "remboursserPret",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"montantVerse\" : 50000\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v1/prets/{{AGGREGATE}}/remboursement",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1",
+						"prets",
+						"{{AGGREGATE}}",
+						"remboursement"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getAllPrets",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/v1/prets?page=0&size=5",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"v1",
+						"prets"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "5"
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "getAllPrets [200]",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:7072/api/v1/prets?page=0&size=5",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7072",
+							"path": [
+								"api",
+								"v1",
+								"prets"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "nginx/1.27.4"
+						},
+						{
+							"key": "Date",
+							"value": "Tue, 25 Feb 2025 11:53:53 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "313"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"content\": [],\n    \"pageable\": {\n        \"pageNumber\": 0,\n        \"pageSize\": 5,\n        \"sort\": {\n            \"empty\": true,\n            \"unsorted\": true,\n            \"sorted\": false\n        },\n        \"offset\": 0,\n        \"unpaged\": false,\n        \"paged\": true\n    },\n    \"last\": true,\n    \"totalPages\": 0,\n    \"totalElements\": 0,\n    \"size\": 5,\n    \"number\": 0,\n    \"sort\": {\n        \"empty\": true,\n        \"unsorted\": true,\n        \"sorted\": false\n    },\n    \"first\": true,\n    \"numberOfElements\": 0,\n    \"empty\": true\n}"
+				}
+			]
+		},
+		{
+			"name": "getPretById",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"clientId\" : \"{{$randomUUID}}\",\r\n    \"montant\" : 1000000,\r\n    \"dureeEnMois\" : 12,\r\n    \"description\" : \"{{$randomLoremSentence}}\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8087/api/v1/prets/{{AGGREGATE}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8087",
+					"path": [
+						"api",
+						"v1",
+						"prets",
+						"{{AGGREGATE}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getPretByStatut",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"clientId\" : \"{{$randomUUID}}\",\r\n    \"montant\" : 1000000,\r\n    \"dureeEnMois\" : 12,\r\n    \"description\" : \"{{$randomLoremSentence}}\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8087/api/v1/prets/statut/REJETTE",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8087",
+					"path": [
+						"api",
+						"v1",
+						"prets",
+						"statut",
+						"REJETTE"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "AGGREGATE",
+			"value": ""
+		}
+	]
+}

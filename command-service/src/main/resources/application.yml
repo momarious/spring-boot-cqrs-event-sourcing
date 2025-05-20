@@ -1,0 +1,47 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: command-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5492}/${DB_NAME:event_store_db}
+    username: ${DB_USER:momarious}
+    password: ${DB_PASSWORD:secret}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    generate-ddl: false
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    root: ERROR
+    org.springframework.boot: ERROR
+    com.momarious.command_service: DEBUG
+
+management:
+#  server:
+#    port: 8091
+  tracing:
+    sampling:
+      probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,liveness,readiness,metrics
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      probes:
+        enabled: true
+
+sentry:
+  dsn: ${SENTRY_DSN}
+  send-default-pii: true

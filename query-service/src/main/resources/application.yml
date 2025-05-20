@@ -1,0 +1,45 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: query-service
+
+  datasource:
+    # url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:pret_db}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5492}/${DB_NAME:read_db}
+    username: ${DB_USER:momarious}
+    password: ${DB_PASSWORD:secret}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    generate-ddl: false
+  flyway:
+    enabled: true
+
+management:
+#  server:
+#    port: 8092
+  tracing:
+    sampling:
+      probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,liveness,readiness,metrics
+  endpoint:
+    prometheus:
+      enabled: true
+
+logging:
+  level:
+    root: ERROR
+    org.springframework.boot: ERROR
+    org.springframework.kafka: ERROR
+    com.momarious.query_service: DEBUG
+
+
+
