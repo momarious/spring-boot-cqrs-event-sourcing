@@ -2,15 +2,25 @@
 
 ## 📌 Description
 
-Application de gestion de prêts bancaires utilisant l’architecture **CQRS + Event Sourcing**, découpée en deux microservices :
+Cette application permet la gestion complète de prêts bancaires, de la demande à la consultation, dans un environnement distribué.
 
-- **🟢 Command Service** (Spring Boot 3.3.8 + Java 21 + GraalVM)
-  - Création de demande de prêt
+Elle est développée en Java 21 avec **Spring Boot 3.3.8** et optimisée avec **GraalVM** pour les performances natives.
+
+---
+
+## 🧱 CQRS
+
+L’architecture repose sur le **pattern CQRS (Command Query Responsibility Segregation)**, avec séparation claire des responsabilités :
+
+- **🟢 Command Service**  
+  Gère les opérations d’écriture :
+  - Création d’une demande de prêt
   - Mise à jour du statut d’un prêt
 
-- **🔵 Query Service** (Spring Boot 3.3.8 + Java 21 + GraalVM)
-  - Consultation des prêts
-
+- **🔵 Query Service**  
+  Gère les opérations de lecture :
+  - Consultation de l’état des prêts
+  
 ## 🗃️ Event Sourcing
 
 ### 📦 Event Versioning
