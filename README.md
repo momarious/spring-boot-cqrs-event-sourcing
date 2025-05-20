@@ -6,7 +6,6 @@ Cette application permet la gestion complète de prêts bancaires, de la demande
 
 Elle est développée en Java 21 avec **Spring Boot 3.3.8** et optimisée avec **GraalVM** pour les performances natives.
 
----
 
 ## 🧱 CQRS
 
@@ -54,6 +53,8 @@ Pour éviter de rejouer l’intégralité des événements :
 
 - Reconstitution périodique des agrégats via des snapshots persistés.
 - Améliore la performance de redémarrage et de lecture.
+
+Pour ce cas, une snapshot est créée tous les 3 événements appliqués sur un agrégat
 
 ### 🔁 Patterns distribués
 - Inbox Pattern : garantit une exécution "exactly-once" des commandes.
